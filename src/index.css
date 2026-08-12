@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-canvas text-ink font-body antialiased;
+  background-image: radial-gradient(circle at 1px 1px, rgba(26, 23, 20, 0.045) 1px, transparent 0);
+  background-size: 18px 18px;
+  min-height: 100vh;
+}
