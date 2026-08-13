@@ -1,5 +1,7 @@
 # Ringside — Fight Scorecards
 
+# View: https://ringsidescore.com/
+
 A boxing scorecard app: browse fight cards, score bouts round-by-round on the
 10-Point Must System, and keep a personal archive of finished scorecards.
 
