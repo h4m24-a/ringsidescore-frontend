@@ -13,17 +13,26 @@ export function AuthProvider({ children }) {
   // hit /auth/refresh, which reads the httpOnly cookie. If it's still valid
   // we get a fresh access token and the user back; if not, we're logged out.
   useEffect(() => {
-    authService
-      .refresh()
-      .then((data) => {
-        setAccessToken(data.accessToken);
-        setUser(data.user);
-      })
-      .catch(() => {
-        setAccessToken(null);
-        setUser(null);
-      })
-      .finally(() => setLoading(false));
+    const wasAuth = localStorage.getItem("isAuthenticated") === "true";
+    if (!wasAuth) {
+      setAccessToken(null);
+      setUser(null);
+      setLoading(false);
+    } else {
+      authService
+        .refresh()
+        .then((data) => {
+          setAccessToken(data.accessToken);
+          setUser(data.user);
+          localStorage.setItem("isAuthenticated", "true");
+        })
+        .catch(() => {
+          setAccessToken(null);
+          setUser(null);
+          localStorage.removeItem("isAuthenticated");
+        })
+        .finally(() => setLoading(false));
+    }
 
     // If a background request's silent refresh (triggered from api.js on a
     // 401) ever fails, drop back to signed-out state instead of leaving the
@@ -40,6 +49,7 @@ export function AuthProvider({ children }) {
       const data = await authService.login(email, password);
       setAccessToken(data.accessToken);
       setUser(data.user);
+        localStorage.setItem("isAuthenticated", "true");
       return data.user;
     } catch (err) {
       setError(err.message);
@@ -53,6 +63,7 @@ export function AuthProvider({ children }) {
       const data = await authService.register(name, email, password);
       setAccessToken(data.accessToken);
       setUser(data.user);
+        localStorage.setItem("isAuthenticated", "true");
       return data.user;
     } catch (err) {
       setError(err.message);
@@ -68,6 +79,7 @@ export function AuthProvider({ children }) {
     }
     setAccessToken(null);
     setUser(null);
+    localStorage.removeItem("isAuthenticated");
   }, []);
 
   // Roles come back from the backend as uppercase Prisma enum values.
