@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { authService } from "../services/authService.js";
-import { setAccessToken, setOnAuthExpired } from "../services/api.js";
+import { setAccessToken as apiSetAccessToken, setOnAuthExpired } from "../services/api.js";
 
 const AuthContext = createContext(null);
 
@@ -8,6 +8,19 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem("isAuthenticated") === "true";
+  });
+  const [accessToken, setAccessTokenState] = useState(() => {
+    return undefined;
+  });
+
+  const setAccessToken = (token) => {
+    try {
+      apiSetAccessToken(token);
+    } catch {}
+    setAccessTokenState(token);
+  };
 
   // On mount: no token lives in localStorage anymore — instead, silently
   // hit /auth/refresh, which reads the httpOnly cookie. If it's still valid
@@ -15,8 +28,9 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const wasAuth = localStorage.getItem("isAuthenticated") === "true";
     if (!wasAuth) {
-      setAccessToken(null);
+      setAccessToken(undefined);
       setUser(null);
+      setIsAuthenticated(false);
       setLoading(false);
     } else {
       authService
@@ -24,11 +38,13 @@ export function AuthProvider({ children }) {
         .then((data) => {
           setAccessToken(data.accessToken);
           setUser(data.user);
+          setIsAuthenticated(true);
           localStorage.setItem("isAuthenticated", "true");
         })
         .catch(() => {
-          setAccessToken(null);
+          setAccessToken(undefined);
           setUser(null);
+          setIsAuthenticated(false);
           localStorage.removeItem("isAuthenticated");
         })
         .finally(() => setLoading(false));
@@ -38,8 +54,10 @@ export function AuthProvider({ children }) {
     // 401) ever fails, drop back to signed-out state instead of leaving the
     // UI thinking it's still logged in.
     setOnAuthExpired(() => {
-      setAccessToken(null);
+      setAccessToken(undefined);
       setUser(null);
+      setIsAuthenticated(false);
+      localStorage.removeItem("isAuthenticated");
     });
   }, []);
 
@@ -49,7 +67,8 @@ export function AuthProvider({ children }) {
       const data = await authService.login(email, password);
       setAccessToken(data.accessToken);
       setUser(data.user);
-        localStorage.setItem("isAuthenticated", "true");
+      setIsAuthenticated(true);
+      localStorage.setItem("isAuthenticated", "true");
       return data.user;
     } catch (err) {
       setError(err.message);
@@ -63,7 +82,8 @@ export function AuthProvider({ children }) {
       const data = await authService.register(name, email, password);
       setAccessToken(data.accessToken);
       setUser(data.user);
-        localStorage.setItem("isAuthenticated", "true");
+      setIsAuthenticated(true);
+      localStorage.setItem("isAuthenticated", "true");
       return data.user;
     } catch (err) {
       setError(err.message);
@@ -77,8 +97,9 @@ export function AuthProvider({ children }) {
     } catch {
       // even if the network call fails, still clear local state below
     }
-    setAccessToken(null);
+    setAccessToken(undefined);
     setUser(null);
+    setIsAuthenticated(false);
     localStorage.removeItem("isAuthenticated");
   }, []);
 
@@ -86,7 +107,7 @@ export function AuthProvider({ children }) {
   const isOrganizer = user?.role === "ORGANIZER" || user?.role === "ADMIN";
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, register, logout, isOrganizer }}>
+    <AuthContext.Provider value={{ user, loading, error, login, register, logout, isOrganizer, isAuthenticated, accessToken }}>
       {children}
     </AuthContext.Provider>
   );
