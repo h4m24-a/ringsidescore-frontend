@@ -346,7 +346,7 @@ async function drawScorecardCanvas(fight, card, { scale = 2 } = {}) {
   ctx.fillRect(0, footerTop, W, footerH);
   ctx.fillStyle = COLORS.slateLight;
   ctx.font = `400 11px '${FONT_MONO}'`;
-  ctx.fillText("SCORED ON RINGSIDE", 32, footerTop + footerH / 2 + 4);
+  ctx.fillText("SCORED ON RINGSIDESCORE.COM", 32, footerTop + footerH / 2 + 4);
   ctx.textAlign = "right";
   const dateStr = card.date
     ? new Date(card.date).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
